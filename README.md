@@ -41,6 +41,13 @@ Stock Price Analysis using concurrency approach
   ./main
   ```
 
+### To generate new csv data file
+- Run the python file at root dir
+
+  ```bash
+  python3 generate_stock_data.py
+  ```
+
 ## Outputs
 
 With 100 Threads and 40 window MACD
