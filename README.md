@@ -56,9 +56,9 @@ Stock Price Analysis using concurrency approach
 
 ## Outputs
 
-getting MACD for 400 days for 5 companies
-one thread finds MACD for a day for all 5 companies
-therefore we are running 400 threads 
+- Getting MACD for 400 days for 5 companies
+- One thread finds MACD for a day for all 5 companies
+- Therefore we are running 400 threads 
  
 ### C program
 
