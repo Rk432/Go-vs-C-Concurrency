@@ -1,130 +1,105 @@
+#include "csv_parser.h"
+#include "macd_calculator.h"
+#include "plotter.h"
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
 #include <sys/time.h>
-#include "analysis/movingaverage.h"
 
-// Declare global variables for shared data
-StockData *stockData;
-int dataSize;
-int threadCount = 100; // Number of threads for concurrent processing
+int num_records = 400;
+StockData companyA_data[450];
+StockData companyB_data[450];
+StockData companyC_data[450];
+StockData companyD_data[450];
+StockData companyE_data[450];
+double macd_results[5][450];
 
-typedef struct
+// Thread function to calculate MACD for a specific day and store the result
+void *calculate_macd_and_store(void *args)
 {
-    StockData *data;
-    int dataSize;
-    int threadId;
-    int windowSize;
-    double threadExecutionTime;
-} ThreadData;
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
 
-void *calculateMovingAverageThread(void *arg)
-{
-    ThreadData *threadData = (ThreadData *)arg;
-    int startIdx = threadData->threadId * (threadData->dataSize / threadCount);
-    int endIdx = (threadData->threadId == threadCount - 1) ? threadData->dataSize : startIdx + (threadData->dataSize / threadCount);
+    int dayToFind = *((int *)args);
 
-    // Measure the execution time of the thread
-    struct timeval threadStart, threadEnd;
-    gettimeofday(&threadStart, NULL);
+    StockData *dataNeeded[5];
+    dataNeeded[0] = extract_last_26_records(companyA_data, num_records, dayToFind);
+    dataNeeded[1] = extract_last_26_records(companyB_data, num_records, dayToFind);
+    dataNeeded[2] = extract_last_26_records(companyC_data, num_records, dayToFind);
+    dataNeeded[3] = extract_last_26_records(companyD_data, num_records, dayToFind);
+    dataNeeded[4] = extract_last_26_records(companyE_data, num_records, dayToFind);
 
-    // Perform moving average analysis within the specified window size for the thread's portion of the data
-    for (int i = startIdx; i < endIdx; ++i)
+    // Populate data_for_day array with stock data for each company on the specific day
+    // Populate data_for_day array for each company
+    for (int company = 0; company < 5; ++company)
     {
-        double movingAverage = calculateMovingAverage(threadData->data, threadData->dataSize, i, threadData->windowSize);
-        // printf("Thread %d - Date: %s, Symbol: %s, Price: %.2f, Moving Average: %.2f\n",
-        //        threadData->threadId, threadData->data[i].date, threadData->data[i].symbol, threadData->data[i].price, movingAverage);
+        macd_results[company][dayToFind] = calculate_macd_for_day(dataNeeded[company]);
     }
 
-    gettimeofday(&threadEnd, NULL);
-    threadData->threadExecutionTime = (threadEnd.tv_sec - threadStart.tv_sec) + (threadEnd.tv_usec - threadStart.tv_usec) / 1e6;
+    free(args); // Free the allocated memory for the day copy
 
-    pthread_exit(NULL);
+    gettimeofday(&end, NULL);
+    double *thread_time = malloc(sizeof(double));
+    *thread_time = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
+    pthread_exit((void *)thread_time);
 }
 
 int main()
 {
-    // Open and read stock data from CSV file
-    FILE *file = fopen("data/stock_data_large.csv", "r");
-    if (file == NULL)
+    // Read data from CSV files for each company
+    read_csv("../stock_data/CompanyA_stock_prices.csv", companyA_data);
+    read_csv("../stock_data/CompanyB_stock_prices.csv", companyB_data);
+    read_csv("../stock_data/CompanyC_stock_prices.csv", companyC_data);
+    read_csv("../stock_data/CompanyD_stock_prices.csv", companyD_data);
+    read_csv("../stock_data/CompanyE_stock_prices.csv", companyE_data);
+
+    // Initialize threads and data for MACD calculation
+    pthread_t threads[num_records];
+
+    // Initialize all elements to 0
+    for (int i = 0; i < 5; ++i)
     {
-        fprintf(stderr, "Error: Could not open CSV file\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // Count the number of lines in the CSV file
-    int lines = 0;
-    char buffer[256];
-    while (fgets(buffer, sizeof(buffer), file) != NULL)
-    {
-        lines++;
-    }
-    rewind(file);
-
-    // Allocate memory for stockData
-    stockData = malloc(lines * sizeof(StockData));
-    if (stockData == NULL)
-    {
-        fprintf(stderr, "Error: Memory allocation failed\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // Read data from CSV file into stockData array
-    int index = 0;
-    while (fgets(buffer, sizeof(buffer), file) != NULL)
-    {
-        sscanf(buffer, "%[^,],%[^,],%lf", stockData[index].date, stockData[index].symbol, &stockData[index].price);
-        index++;
-    }
-    dataSize = lines;
-
-    fclose(file);
-
-    struct timeval start, end; // Added variables to measure total execution time
-    gettimeofday(&start, NULL);
-
-    // Create threads for concurrent moving average calculations
-    double totalThreadExecutionTime = 0.0;
-    pthread_t threads[threadCount];
-    ThreadData threadData[threadCount];
-
-    for (int i = 0; i < threadCount; ++i)
-    {
-        threadData[i].data = stockData;
-        threadData[i].dataSize = dataSize;
-        threadData[i].threadId = i;
-        threadData[i].windowSize = 40; // Example window size
-
-        int result = pthread_create(&threads[i], NULL, calculateMovingAverageThread, (void *)&threadData[i]);
-        if (result != 0)
+        for (int j = 0; j < num_records; ++j)
         {
-            fprintf(stderr, "Error: Failed to create thread %d\n", i);
-            exit(EXIT_FAILURE);
+            macd_results[i][j] = 0.0;
         }
     }
 
-    // Wait for threads to complete
-    for (int i = 0; i < threadCount; ++i)
+    struct timeval startMain, endMain; // Added variables to measure total execution time
+    gettimeofday(&startMain, NULL);
+
+    // Create threads for each day to calculate MACD for each company
+    for (int day = 26; day < 26 + num_records; ++day)
     {
-        pthread_join(threads[i], NULL);
-        printf("Thread %d execution time: %.6f seconds\n", i, threadData[i].threadExecutionTime);
-        totalThreadExecutionTime += threadData[i].threadExecutionTime;
+        int *day_copy = malloc(sizeof(int)); // Allocate memory for the day copy
+        *day_copy = day;                     // Copy the value of day to day_copy
+        pthread_create(&threads[day - 26], NULL, calculate_macd_and_store, (void *)day_copy);
     }
 
-    // Calculate average thread execution time
-    double avgThreadExecutionTime = totalThreadExecutionTime / threadCount;
+    // Wait for all threads to complete and calculate total thread time
+    double total_thread_time = 0;
+    for (int day = 26; day < 26 + num_records; ++day)
+    {
+        double *thread_time;
+        pthread_join(threads[day - 26], (void **)&thread_time);
+        printf("Thread %d execution time: %.9f seconds\n", (day - 26) + 1, *thread_time);
+        total_thread_time += *thread_time;
+        free(thread_time);
+    }
 
-    printf("Average thread execution time: %.6f seconds\n", avgThreadExecutionTime);
+    // Calculate and print average thread time
+    double average_thread_time = total_thread_time / num_records;
+    printf("Average thread execution time: %.9f seconds\n", average_thread_time);
 
-    gettimeofday(&end, NULL);
-    double executionTime = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
+    gettimeofday(&endMain, NULL);
+    double executionTime = (endMain.tv_sec - startMain.tv_sec) + (endMain.tv_usec - startMain.tv_usec) / 1e6;
+    printf("Total Main execution time: %.9f seconds\n", executionTime);
 
-    printf("Total Thread execution time: %.6f seconds\n", totalThreadExecutionTime);
-    printf("Total Main execution time: %.6f seconds\n", executionTime);
-
-    // Free allocated memory and perform cleanup
-    free(stockData);
+    createLineChart(macd_results[0], 450, "CompanyA_MACD_C.png");
+    createLineChart(macd_results[1], 450, "CompanyB_MACD_C.png");
+    createLineChart(macd_results[2], 450, "CompanyC_MACD_C.png");
+    createLineChart(macd_results[3], 450, "CompanyD_MACD_C.png");
+    createLineChart(macd_results[4], 450, "CompanyE_MACD_C.png");
 
     return 0;
 }

@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "csv_parser.h": "c",
+        "pthread.h": "c",
+        "math.h": "c"
     }
 }

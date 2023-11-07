@@ -1,27 +1,40 @@
 import csv
 import random
+import os
 from datetime import datetime, timedelta
 
-# List of stock symbols for which data will be generated
-symbols = ["AAPL", "GOOG", "AMZN", "TSLA", "MSFT"]
+# List of company names
+companies = ['CompanyA', 'CompanyB', 'CompanyC', 'CompanyD', 'CompanyE']
 
-# Number of data points per symbol
-data_points_per_symbol = 1000000
+# Function to generate random stock prices for 500 days
+def generate_stock_data(days=500):
+    start_date = datetime(2023, 1, 1)  # Start date for the stock prices
+    end_date = start_date + timedelta(days=days - 1)  # End date for the stock prices
+    
+    dates = [start_date + timedelta(days=i) for i in range(days)]
+    prices = [random.uniform(50, 500) for _ in range(days)]
+    
+    # Combine dates and prices into a list of tuples
+    stock_data = list(zip(dates, prices))
+    stock_data.sort(key=lambda x: x[0])  # Sort stock data by dates
+    
+    return stock_data
 
-# Date range for the dataset
-start_date = datetime(2023, 1, 1)
-end_date = datetime(2023, 12, 31)
+# Create a directory to store CSV files
+if not os.path.exists('stock_data'):
+    os.makedirs('stock_data')
 
-# Generate and write stock data to CSV file
-with open('stock_data_large.csv', 'w', newline='') as csvfile:
-    fieldnames = ['Date', 'Symbol', 'Price']
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-    writer.writeheader()
-
-    for _ in range(data_points_per_symbol):
-        date = start_date + timedelta(days=random.randint(0, (end_date - start_date).days))
-        symbol = random.choice(symbols)
-        price = round(random.uniform(50, 1500), 2)  # Random price between 50 and 1500
-        writer.writerow({'Date': date.strftime('%Y-%m-%d'), 'Symbol': symbol, 'Price': price})
-
-print(f"Generated {len(symbols) * data_points_per_symbol} data points. Output saved to stock_data_large.csv.")
+# Generate and save stock prices for each company
+for company in companies:
+    stock_data = generate_stock_data()
+    csv_file_path = f'stock_data/{company}_stock_prices.csv'
+    
+    with open(csv_file_path, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(['Date', 'Stock Price'])
+        
+        for date, price in stock_data:
+            formatted_date = date.strftime('%Y-%m-%d')
+            csvwriter.writerow([formatted_date, price])
+    
+    print(f'Stock prices for {company} generated and saved to {csv_file_path}')

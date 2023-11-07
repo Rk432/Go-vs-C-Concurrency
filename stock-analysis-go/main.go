@@ -1,99 +1,100 @@
 package main
 
 import (
-	"bufio"
-	"encoding/csv"
 	"fmt"
-	"os"
-	"strconv"
+	"stock-analysis-go/csvparser"
+	"stock-analysis-go/macdcalculator"
+	"stock-analysis-go/stockdata"
+	"stock-analysis-go/plotchart"
 	"sync"
 	"time"
 )
 
-const threadCount = 100
+const numRecords = 400
 
-// StockData represents stock information with Date, Symbol, and Price.
-type StockData struct {
-	Date   string
-	Symbol string
-	Price  float64
-}
-
-func calculateMovingAverage(data []StockData, windowSize int, threadID int, wg *sync.WaitGroup, threadExecutionTimes chan<- time.Duration) {
+func calculateMACDAndStore(day int, companyA, companyB, companyC, companyD, companyE []stockdata.StockData, macdResults [][]float64, wg *sync.WaitGroup, threadTimes chan float64) {
 	defer wg.Done()
 
-	startIdx := threadID * (len(data) / threadCount)
-	endIdx := startIdx + (len(data) / threadCount)
-	if threadID == threadCount-1 {
-		endIdx = len(data)
+	start := time.Now()
+
+	dataNeeded := make([][]stockdata.StockData, 5);
+	dataNeeded[0] = macdcalculator.ExtractLast26Records(day, companyA);
+	dataNeeded[1] = macdcalculator.ExtractLast26Records(day, companyB);
+	dataNeeded[2] = macdcalculator.ExtractLast26Records(day, companyC);
+	dataNeeded[3] = macdcalculator.ExtractLast26Records(day, companyD);
+	dataNeeded[4] = macdcalculator.ExtractLast26Records(day, companyE);
+
+	for i := range macdResults {
+		macdResults[i][day] = macdcalculator.CalculateMACDForDay(dataNeeded[i])
 	}
 
-	startTime := time.Now()
+	end := time.Now()
+	threadTime := end.Sub(start).Seconds()
 
-	for i := startIdx; i < endIdx; i++ {
-		sum := 0.0
-		count := 0
-		for j := i - windowSize + 1; j <= i; j++ {
-			if j >= 0 && j < len(data) {
-				sum += data[j].Price
-				count++
-			}
-		}
-		if count > 0 {
-			// movingAverage := sum / float64(count)
-			// fmt.Printf("Thread %d - Date: %s, Symbol: %s, Price: %.2f, Moving Average: %.2f\n", threadID, data[i].Date, data[i].Symbol, data[i].Price, movingAverage)
-		}
-	}
-
-	endTime := time.Now()
-	threadExecutionTimes <- endTime.Sub(startTime)
+	threadTimes <- threadTime
 }
 
 func main() {
-	file, err := os.Open("data/stock_data_large.csv")
-	if err != nil {
-		fmt.Println("Error: Could not open CSV file")
-		return
-	}
-	defer file.Close()
-
-	reader := csv.NewReader(bufio.NewReader(file))
-	var stockData []StockData
-	for {
-		line, err := reader.Read()
-		if err != nil {
-			break
-		}
-		price, _ := strconv.ParseFloat(line[2], 64)
-		stockData = append(stockData, StockData{Date: line[0], Symbol: line[1], Price: price})
-	}
-
-	startTime := time.Now()
-
 	var wg sync.WaitGroup
-	threadExecutionTimes := make(chan time.Duration, threadCount)
+	threadTimes := make(chan float64, numRecords)
 
-	wg.Add(threadCount)
-	for i := 0; i < threadCount; i++ {
-		go calculateMovingAverage(stockData, 40, i, &wg, threadExecutionTimes)
+	companyAData := csvparser.ReadCSV("../stock_data/CompanyA_stock_prices.csv", 450)
+	companyBData := csvparser.ReadCSV("../stock_data/CompanyB_stock_prices.csv", 450)
+	companyCData := csvparser.ReadCSV("../stock_data/CompanyC_stock_prices.csv", 450)
+	companyDData := csvparser.ReadCSV("../stock_data/CompanyD_stock_prices.csv", 450)
+	companyEData := csvparser.ReadCSV("../stock_data/CompanyE_stock_prices.csv", 450)
+
+	macdResults := make([][]float64, 5)
+	for i := range macdResults {
+		macdResults[i] = make([]float64, 450)
+	}
+
+	var totalThreadTime float64
+
+	startMain := time.Now()
+
+	for day := 26; day < 26 + numRecords; day++ {
+		wg.Add(1)
+		go calculateMACDAndStore(day, companyAData, companyBData, companyCData, companyDData, companyEData, macdResults, &wg, threadTimes)
 	}
 
 	go func() {
 		wg.Wait()
-		close(threadExecutionTimes)
+		close(threadTimes)
 	}()
 
-	totalExecutionTime := 0.0
-	for executionTime := range threadExecutionTimes {
-		fmt.Printf("Thread execution time: %.6f seconds\n", executionTime.Seconds())
-		totalExecutionTime += executionTime.Seconds()
+	for threadTime := range threadTimes {
+		fmt.Printf("Thread execution time: %.9f seconds\n", threadTime)
+		totalThreadTime += threadTime
 	}
 
-	avgThreadExecutionTime := totalExecutionTime / float64(threadCount)
-	fmt.Printf("Average thread execution time: %.6f seconds\n", avgThreadExecutionTime)
+	averageThreadTime := totalThreadTime / float64(numRecords)
+	fmt.Printf("Average thread execution time: %.9f seconds\n", averageThreadTime)
 
-	endTime := time.Now()
-	executionTime := endTime.Sub(startTime)
-	fmt.Printf("Total Thread execution time: %.6f seconds\n", totalExecutionTime)
-	fmt.Printf("Total Main execution time: %.6f seconds\n", executionTime.Seconds())
+	endMain := time.Now()
+	mainExecutionTime := endMain.Sub(startMain).Seconds()
+
+	fmt.Printf("Total Main execution time: %.9f seconds\n", mainExecutionTime)
+
+	err := plotchart.PlotMACDChart(macdResults[0], "CompanyA_MACD.png")
+	if err != nil {
+		fmt.Println("Error plotting MACD chart:", err)
+	}
+	err = plotchart.PlotMACDChart(macdResults[1], "CompanyB_MACD.png")
+	if err != nil {
+		fmt.Println("Error plotting MACD chart:", err)
+	}
+	err = plotchart.PlotMACDChart(macdResults[2], "CompanyC_MACD.png")
+	if err != nil {
+		fmt.Println("Error plotting MACD chart:", err)
+	}
+	err = plotchart.PlotMACDChart(macdResults[3], "CompanyD_MACD.png")
+	if err != nil {
+		fmt.Println("Error plotting MACD chart:", err)
+	}
+	err = plotchart.PlotMACDChart(macdResults[4], "CompanyE_MACD.png")
+	if err != nil {
+		fmt.Println("Error plotting MACD chart:", err)
+	}
+
 }

@@ -16,7 +16,7 @@ Stock Price Analysis using concurrency approach
 - Compilation to Executable
 
   ```bash
-  gcc -o myprogram main.c analysis/movingaverage.c -lpthread -lm
+  gcc -o myprogram main.c csv_parser.c macd_calculator.c plotter.c -lpthread -lm
   ```
 - Run 
 
@@ -30,15 +30,21 @@ Stock Price Analysis using concurrency approach
   ```bash
   cd stock-analysis-go
   ```
+  Plotting Libraries Installation
+
+  ```bash
+  go get gonum.org/v1/plot/...
+  ```
+
 - Compilation to Executable
 
   ```bash
-  go build main.go
+  go build
   ```
 - Run 
 
   ```bash
-  ./main
+  ./stock-analysis-go
   ```
 
 ### To generate new csv data file
@@ -55,15 +61,13 @@ With 100 Threads and 40 window MACD
 ### C program
 
 ```
-Average thread execution time: 0.001935 seconds
-Total Thread execution time: 0.193539 seconds
-Total Main execution time: 0.028249 seconds
+Average thread execution time: 0.000008092 seconds
+Total Main execution time: 0.017068000 seconds
 ```
 
 ### Go program
 
-``` 
-Average thread execution time: 0.000626 seconds
-Total Thread execution time: 0.062599 seconds
-Total Main execution time: 0.014623 seconds
+```
+Average thread execution time: 0.000210678 seconds
+Total Main execution time: 0.003490984 seconds
 ```
