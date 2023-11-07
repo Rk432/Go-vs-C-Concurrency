@@ -30,7 +30,7 @@ Stock Price Analysis using concurrency approach
   ```bash
   cd stock-analysis-go
   ```
-  Plotting Libraries Installation
+- Plotting Libraries Installation
 
   ```bash
   go get gonum.org/v1/plot/...
@@ -56,7 +56,9 @@ Stock Price Analysis using concurrency approach
 
 ## Outputs
 
-With 100 Threads and 40 window MACD
+getting MACD for 400 days for 5 companies
+one thread finds MACD for a day for all 5 companies
+therefore we are running 400 threads 
  
 ### C program
 
