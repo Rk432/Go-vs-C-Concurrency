@@ -127,6 +127,67 @@ Address           Kbytes     RSS   Dirty
 total kB         1235816   12572    6808
 ```
 
+#### Similar trend with varying number of threads
+
+```
+Memory Usage
+ 
+============== 400 Threads ==============
+
+Address           Kbytes     RSS   Dirty
+-----------------------------------------
+[  refer to memory.txt for whole data   ]
+-----------------------------------------
+# C program :
+total kB          232488    3320    1260 
+# Go program :
+total kB         1235816   12572    6808
+ 
+============== 200 Threads ==============
+
+Address           Kbytes     RSS   Dirty
+-----------------------------------------
+[  refer to memory.txt for whole data   ]
+-----------------------------------------
+# C program :
+total kB          232488    2820     764
+# Go program :
+total kB         1234728    9892    4128
+ 
+============== 100  Threads ==============
+
+Address           Kbytes     RSS   Dirty
+-----------------------------------------
+[  refer to memory.txt for whole data   ]
+-----------------------------------------
+# C program :
+total kB          232356    2580     540
+# Go program :
+total kB         1234984    8572    2808
+ 
+============== 50 Threads ==============
+
+Address           Kbytes     RSS   Dirty
+-----------------------------------------
+[  refer to memory.txt for whole data   ]
+-----------------------------------------
+# C program :
+total kB          232356    2468     408
+# Go program :
+total kB         1234728    8080    2316
+  
+============== 20 Threads ==============
+
+Address           Kbytes     RSS   Dirty
+-----------------------------------------
+[  refer to memory.txt for whole data   ]
+-----------------------------------------
+# C program :
+total kB          297892    2400     340 
+# Go program :
+total kB         1234728    7796    2032
+```
+
 - In this case C has better results as it is not garbage collected.
 - Go makes Multithreading faster but it needs to have some overhead in terms of memory to achieve that.
 - Hence Go runtime ends up using more memory to run a Go program.
