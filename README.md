@@ -16,12 +16,12 @@ Stock Price Analysis using concurrency approach
 - Compilation to Executable
 
   ```bash
-  gcc -o myprogram main.c csv_parser.c macd_calculator.c plotter.c -lpthread -lm
+  make
   ```
 - Run 
 
   ```bash
-  ./myprogram
+  ./a.out
   ```
 
 ### Go code
@@ -59,17 +59,55 @@ Stock Price Analysis using concurrency approach
 - Getting MACD for 400 days for 5 companies
 - One thread finds MACD for a day for all 5 companies
 - Therefore we are running 400 threads 
- 
-### C program
+
+### Execution Time Comparison -
+
+#### C program
 
 ```
 Average thread execution time: 0.000008092 seconds
 Total Main execution time: 0.017068000 seconds
 ```
 
-### Go program
+#### Go program
 
 ```
 Average thread execution time: 0.000210678 seconds
 Total Main execution time: 0.003490984 seconds
 ```
+
+- This C is better in terms of avg thread execution time as it does not have a garbage collector like Go.
+- But in terms of the execution of main function where threads are created --> main function waits --> threads joined Go is Faster.
+- Because Goroutines are part of Go runtime and not bounded by kernel / hardware (software threads) , whereas in C threads are created by kernel and are hardware threads.
+- Hence Goroutines have faster startup and destroy times compared to C pthreads.
+
+### Memory Usage
+
+- There aren't any easy ways to find the thread memory usage in C. 
+- And in Go as well as Goroutines are not bounded by kernel they dont have anything like PID.
+- So we decided to find the whole program memory usage using the PID of the program/process.
+- We used pmap to find the memory usage (output stored in file memory.txt)
+
+#### C Program Memory Usage
+
+```
+Address           Kbytes     RSS   Dirty
+-----------------------------------------
+[  refer to memory.txt for whole data   ]
+-----------------------------------------
+total kB          232488    3320    1260
+```
+
+#### Go program Memory Usage
+
+```
+Address           Kbytes     RSS   Dirty
+-----------------------------------------
+[  refer to memory.txt for whole data   ]
+-----------------------------------------
+total kB         1235816   12572    6808
+```
+
+- In this case C has better results as it is not garbage collected.
+- Go makes Multithreading faster but it needs to have some overhead in terms of memory to achieve that.
+- Hence Go runtime ends up using more memory to run a Go program.

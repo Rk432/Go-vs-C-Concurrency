@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 int num_records = 400;
 StockData companyA_data[450];
@@ -41,11 +43,13 @@ void *calculate_macd_and_store(void *args)
     gettimeofday(&end, NULL);
     double *thread_time = malloc(sizeof(double));
     *thread_time = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
+
     pthread_exit((void *)thread_time);
 }
 
 int main()
 {
+
     // Read data from CSV files for each company
     read_csv("../stock_data/CompanyA_stock_prices.csv", companyA_data);
     read_csv("../stock_data/CompanyB_stock_prices.csv", companyB_data);
@@ -86,7 +90,6 @@ int main()
         total_thread_time += *thread_time;
         free(thread_time);
     }
-
     // Calculate and print average thread time
     double average_thread_time = total_thread_time / num_records;
     printf("Average thread execution time: %.9f seconds\n", average_thread_time);
@@ -94,6 +97,10 @@ int main()
     gettimeofday(&endMain, NULL);
     double executionTime = (endMain.tv_sec - startMain.tv_sec) + (endMain.tv_usec - startMain.tv_usec) / 1e6;
     printf("Total Main execution time: %.9f seconds\n", executionTime);
+
+    char command[100];
+    sprintf(command, "pmap -x %u > memory.txt", getpid());
+    int status = system(command);
 
     createLineChart(macd_results[0], 450, "CompanyA_MACD_C.png");
     createLineChart(macd_results[1], 450, "CompanyB_MACD_C.png");
