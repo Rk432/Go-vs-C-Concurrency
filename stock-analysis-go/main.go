@@ -8,6 +8,8 @@ import (
 	"stock-analysis-go/plotchart"
 	"sync"
 	"time"
+	"os"
+	"os/exec"
 )
 
 const numRecords = 400
@@ -76,7 +78,16 @@ func main() {
 
 	fmt.Printf("Total Main execution time: %.9f seconds\n", mainExecutionTime)
 
-	err := plotchart.PlotMACDChart(macdResults[0], "CompanyA_MACD.png")
+	command := fmt.Sprintf("pmap -x %d > memory.txt", os.Getpid())
+	cmd := exec.Command("bash","-c",command);
+
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("Error running pmap command:", err)
+		return
+	}
+
+	err = plotchart.PlotMACDChart(macdResults[0], "CompanyA_MACD.png")
 	if err != nil {
 		fmt.Println("Error plotting MACD chart:", err)
 	}
