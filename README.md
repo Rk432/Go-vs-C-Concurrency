@@ -80,6 +80,24 @@ Total Main execution time: 0.003490984 seconds
 - But in terms of the execution of main function where threads are created --> main function waits --> threads joined Go is Faster.
 - Because Goroutines are part of Go runtime and not bounded by kernel / hardware (software threads) , whereas in C threads are created by kernel and are hardware threads.
 - Hence Goroutines have faster startup and destroy times compared to C pthreads.
+- This Pretty much remains same across different number of threads
+
+#### Variation in Number of Threads
+
+| Threads     | C Main (in miliseconds) | Go Main (in miliseconds) | C pthreads Avg time (in miliseconds) | Go Goroutines Avg time (in miliseconds) |
+| ----------- | ----------------------- | ------------------------ | --------------------------- | ------------------------------ |
+| 20          | 1.210000                | 0.245596                 | 0.033600                    | 0.021921                       |
+| 50          | 2.739000                | 0.468968                 | 0.029140                    | 0.022892                       |
+| 100         | 6.879000                | 0.657984                 | 0.014810                    | 0.023142                       |
+| 200         | 11.591000               | 3.473497                 | 0.012870                    | 0.048333                       |
+| 400         | 17.068000               | 3.490984                 | 0.008092                    | 0.210678                       |
+
+![image](https://github.com/Rohitkk432/Go-vs-C-Concurrency/assets/74586376/9d536b7a-eb55-4a4d-abf4-be4ab919249d)
+
+![image](https://github.com/Rohitkk432/Go-vs-C-Concurrency/assets/74586376/4132b8fd-c0ac-4f24-9cbc-299e49d2e1c6)
+
+- From above result we can see that Go Main Execution time is pretty stable compared to C where it increases with increasing number of threads.
+- Whereas C Avg Thread Execution time is more or less same where as it increases in case of Go with increasing number of threads.
 
 ### Memory Usage
 
