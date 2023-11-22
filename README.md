@@ -1,7 +1,21 @@
 # Go-vs-C-Concurrency
 Stock Price Analysis using concurrency approach
 
-# How to run code
+## Group - 10
+- Rohit Kodam - 2020B3A71141G
+- Anshul Bharti - 2020B3A71262G
+- Anish Kamath - 2020B3A71085G
+- Abhinav Setia - 2020B3A71784G
+
+## Table of Contents
+- [How to run code](#how-to-run-code)
+- [Problem Statement](#problem-statement)
+- [Software Architecture](#software-architecture)
+- [POPL Aspects](#popl-aspects)
+- [Results](#results)
+- [Potential for future work](#potential-for-future-work)
+
+## How to run code
 ### Prerequisites
 - Linux machine as the code uses pthreads library
 - gcc for C code compilation
@@ -54,7 +68,50 @@ Stock Price Analysis using concurrency approach
   python3 generate_stock_data.py
   ```
 
-## Outputs
+## Problem Statement
+We are trying to compare Multithreading of Software vs Hardware threads. Ofcourse this is in use from before traditionally in servers Go is used for faster calculation intensive tasks using its Goroutines(threads) for less latency in realtime apis (like stock data metrics, graphs etc). So in use developers prefer Go (Golang) over Python(Flask/Django frramework) for server. And this was the motivation to explore Go via this project. As we wanted to compare similar things , multithreading vs single threaded languages was not the choice so we thought of comparing the traditional C in linux which has pthreads for multithreading with Go's Goroutines.
+
+And Go has its own aspects which makes it more important to explore, as it has its ecosystem of frameworks and community and use in realtime servers. Go also has easy to understand syntax. Go is founded by Google developers which consisted of the legendary Ken Thompson who is the inventer of language B which is the predecessor of C language.
+
+## Software Architecture
+This is meant to be as a server side code of a realtime stock analysis product. And we tried to implement some computation aspects of it in out project , we did not implement the server/api aspect as it was not our project aim.
+The whole code was written by us we just refered to some Go systax to implement the Go part of the project. MACD (moving average convergence divergence) an economic metric of stocks its formula was used by us in this project.
+We are basically doing a computation intensive task using threads and comparing the time / memory usage by varing the number of threads we use and draw conclusions based on that.
+
+Following is a difference between Golang's Gorutines vs Threads from [Geeks For Geeks](https://www.geeksforgeeks.org/golang-goroutine-vs-thread/) 
+
+![image](https://github.com/Rohitkk432/Go-vs-C-Concurrency/assets/74586376/1e164c41-ab34-491b-ba3e-e5c72ebf010e)
+
+## Popl Aspects
+
+- **Concurrency**: In Go, concurrency is a first-class citizen, supported by goroutines (lightweight threads) and channels, offering a clean and straightforward syntax for managing concurrent tasks. On the other hand, C lacks built-in support for concurrency, and on platforms like Linux, developers typically resort to using libraries such as pthreads to achieve concurrent execution.
+
+- **Memory Management**: Go simplifies memory management with a garbage collector, automating memory handling to reduce the likelihood of memory leaks. In contrast, C relies on manual memory management, granting developers direct control over allocation and deallocation for more fine-grained control but requiring careful attention to avoid memory-related issues.
+
+   Difficulties faced  - In C it is difficult to figure out exactly where the memory should be deallocated/freed or clashes / null reference will occur. Where as in Go we didnt need to think about the memory.
+   example : line 91 of [main.c](https://github.com/Rohitkk432/Go-vs-C-Concurrency/blob/main/stock-analysis-c/main.c)
+
+- **Static Typing**: Go is statically typed with some type inference, necessitating variable type declarations at compile time but maintaining a cleaner syntax. Meanwhile, C is also statically typed, requiring explicit type declarations for each variable at compile time.
+
+  Difficulty faced  - In C the threads argument passing to runner function and retrieving the return value is a pain to deal with for new adopters. where as in Go it was pretty straitforward to understand.
+  example : In C line 25,44,47 for runner function and line 80 thread creation with arguments , line 88 retrieving return value in [main.c](https://github.com/Rohitkk432/Go-vs-C-Concurrency/blob/main/stock-analysis-c/main.c)
+  where as in Go Line 60 arguement passing was just line a function and we just add go at start of the function call [main.go](https://github.com/Rohitkk432/Go-vs-C-Concurrency/blob/main/stock-analysis-go/main.go)
+
+- **Error Handling**: Go takes a distinctive approach to error handling, using multiple return values, with the second often reserved for error information. In C, error handling typically involves return codes or global variables.
+
+  example line 84 in [main.go](https://github.com/Rohitkk432/Go-vs-C-Concurrency/blob/main/stock-analysis-go/main.go) where we are doing a systemcall to get memory usage info.
+  
+- **Syntax and Readability**: Go is designed for simplicity and readability, featuring a clean syntax and a minimalistic approach to language features. Conversely, C has a relatively simple syntax but allows low-level manipulation, potentially sacrificing readability for more complex tasks.
+
+- **Package Management**: Go includes a built-in dependency management system called "go modules," streamlining the process of managing external dependencies. In contrast, C lacks a built-in package manager, necessitating manual downloading and linking of libraries.
+
+- **Tooling**: Go provides a comprehensive set of tools, including a built-in formatter (gofmt), a testing framework, and a package manager. In contrast, C has a more minimalistic toolset, often relying on external tools and libraries for development.
+
+- **Portability**: Go is designed for high portability, enabling code to be compiled and run on different platforms with ease. In comparison, while C code can be portable, ensuring compatibility across different platforms may require additional effort.
+
+## Results
+
+### Outputs
 
 - Getting MACD for 400 days for 5 companies
 - One thread finds MACD for a day for all 5 companies
@@ -191,3 +248,9 @@ total kB         1234728    7796    2032
 - In this case C has better results as it is not garbage collected.
 - Go makes Multithreading faster but it needs to have some overhead in terms of memory to achieve that.
 - Hence Go runtime ends up using more memory to run a Go program.
+
+## Potential for future work
+
+- In terms for the topic we want to include few more economic matrics, and find buy sell signals at any given moment.
+- In terms of more exploration of Go , channels can be explored in go which helps in easy communication between threads.
+- Memory utilization could not be found for each thread , goroutine as there is no easy or known method to find the same.
